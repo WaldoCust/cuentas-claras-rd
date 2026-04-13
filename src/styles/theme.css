@@ -1,0 +1,51 @@
+@layer base {
+  :root {
+    /* Base Colors */
+    --background: #f8fafc;
+    --background-secondary: #f1f5f9;
+    --foreground: #0f172a;
+
+    /* Semantic Tokens (Light Mode - Arctic Glass) */
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --primary-soft: #dbeafe;
+    
+    --text-heading: #0f172a;
+    --text-body: #475569;
+    --text-muted: #64748b;
+
+    --surface-base: rgba(255, 255, 255, 0.70);
+    --surface-elevated: rgba(255, 255, 255, 0.82);
+    --surface-strong: rgba(255, 255, 255, 0.92);
+
+    --border-soft: rgba(148, 163, 184, 0.18);
+    --border-default: rgba(148, 163, 184, 0.28);
+
+    --success: #16a34a;
+    --warning: #f59e0b;
+    --danger: #dc2626;
+    --info: #0ea5e9;
+
+    /* Radius */
+    --radius-sm: 0.75rem;
+    --radius-md: 1rem;
+    --radius-lg: 1.25rem;
+    --radius-xl: 1.5rem;
+    --radius-2xl: 1.75rem;
+
+    /* Shadows */
+    --shadow-glass: 0 10px 30px rgba(15, 23, 42, 0.08);
+    --shadow-glass-hover: 0 18px 50px rgba(15, 23, 42, 0.12);
+    --shadow-soft: 0 4px 20px rgba(15, 23, 42, 0.05);
+
+    /* Blur */
+    --blur-glass: 20px;
+    --blur-heavy: 28px;
+
+    /* Motion */
+    --motion-fast: 150ms;
+    --motion-normal: 250ms;
+    --motion-slow: 400ms;
+    --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}

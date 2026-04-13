@@ -1,0 +1,70 @@
+{
+  "project_name": "CuentasClarasRD",
+  "description": "Elite Editorial Accounting Platform specifically designed for the Dominican Republic fiscal market (DGII Compliance).",
+  "branding": {
+    "aesthetic": "Arctic Glass / Elite Editorial",
+    "theme": "Dark Mode & Glassmorphism",
+    "typography": "Modern Inter / Editorial Italic",
+    "colors_primary": "Elite Red / Deep Slate / Crimson Accent"
+  },
+  "technology_stack": {
+    "frontend": {
+      "framework": "Next.js 16.2.3 (App Router)",
+      "library": "React 19.2.4",
+      "styling": "Tailwind CSS 4.0",
+      "animations": "Framer Motion 12.38.0",
+      "icons": "Lucide React"
+    },
+    "backend_data": {
+      "platform": "Supabase (PostgreSQL)",
+      "auth": "@supabase/ssr",
+      "api": "PostgREST"
+    },
+    "intelligence": {
+      "vision_engine": "Google Gemini (Pro Vision)",
+      "logic": "Automated 606/607 Fiscal Parsing"
+    }
+  },
+  "layout_architecture": {
+    "grid_system": "12-Column Responsive Editorial Grid",
+    "sidebar_width": "410px (High-Fidelity Interaction Space)",
+    "filter_logic": "Deep Drawer / Sidebar Filter Integration",
+    "modals": "Spring-Animated Arctic Glass Overlays"
+  },
+  "database_schema_v1_3": {
+    "profiles": {
+      "description": "User account and business owner metadata.",
+      "fields": ["id", "user_id", "email", "role", "full_name", "business_name", "rnc", "phone", "address", "avatar_url"]
+    },
+    "clients": {
+      "description": "Fiscal entities (Customers/Suppliers) for 606/607 reporting.",
+      "fields": ["id", "business_name", "rnc_or_cedula", "document_type", "fiscal_type", "phone", "email", "address", "notes", "behavior", "status"]
+    },
+    "invoices": {
+      "description": "Core fiscal engine supporting 606/607 and e-CF formats.",
+      "fields": [
+        "id", "user_id", "client_id", "direction (issued/purchase)", "type (606/607/e-CF)", 
+        "date_emission", "ncf_number", "status", "currency", "subtotal", "itbis", "total", 
+        "expense_type (606)", "revenue_type (607)", "payment_method", "reporting_status"
+      ]
+    }
+  },
+  "core_components_library": {
+    "EliteDropdown": "Custom headless UI dropdown with Arctic Glass styling and empty state handlers.",
+    "EliteSegmented": "Modern slider-based toggle for document classification.",
+    "Sidebar": "Expanded premium navigation with pop-out tooltips and overflowing menu support.",
+    "FiscalForm": "Dynamic form engine with AI-Vision backfill capabilities."
+  },
+  "recent_achievements": [
+    "Implemented GIGA-MIGRATION v1.3: Resolved 400 Bad Request errors by synchronizing cloud schema with UI requirements (added address, phone, email, etc. to clients).",
+    "Elite Sidebar Refactor: Expanded to 410px to accommodate premium editorial content.",
+    "Grid Standardization: Migrated all dashboard pages to a consistent 12-column layout.",
+    "Dropdown Hardening: Fixed clipping issues caused by parent overflow constraints across the application.",
+    "Vision Sync: Unified variable naming (revenue_type) between AI parser, Database, and Export utilities."
+  ],
+  "verification_status": {
+    "client_registration": "FIXED & VERIFIED",
+    "fiscal_logic": "STABLE",
+    "ui_ux": "ELITE STANDARD"
+  }
+}
