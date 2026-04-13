@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, Calendar, Zap, AlertCircle, FileText, ChevronRight } from "lucide-react";
+import { TrendingUp, Calendar, Zap, AlertCircle, FileText, ChevronRight, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // New Components & Services
@@ -11,6 +11,7 @@ import TaxSummaryCard from "@/components/dashboard/TaxSummaryCard";
 import { RevenueSummaryCard, ExpenseSummaryCard } from "@/components/dashboard/RevenueSummaryCard";
 import LoadingState from "@/components/state/LoadingState";
 import EmptyState from "@/components/state/EmptyState";
+import TrustBadge from "@/components/ui/TrustBadge";
 
 import { useRouter } from "next/navigation";
 

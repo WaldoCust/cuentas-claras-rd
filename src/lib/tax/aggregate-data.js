@@ -6,8 +6,8 @@
  */
 export const aggregateFiscalData = (sales, purchases) => {
   // Filter out voided or invalid records
-  const activeSales = sales.filter(s => s.status !== 'voided');
-  const activePurchases = purchases.filter(p => s => p.status !== 'archived');
+  const activeSales = (sales || []).filter(s => s.status !== 'voided');
+  const activePurchases = (purchases || []).filter(p => p.status !== 'archived');
 
   const summaries = {
     revenue: {

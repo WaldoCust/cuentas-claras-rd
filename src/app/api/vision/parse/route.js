@@ -44,21 +44,34 @@ export async function POST(req) {
 
     logger.info("Vision API: Starting invoice parsing with Gemini 1.5 Flash");
 
+    const mimeType = image.match(/data:(.*?);base64/)?.[1] || "image/jpeg";
+    const base64Data = image.includes(",") ? image.split(",")[1] : image;
+
     const result = await model.generateContent([
       prompt,
       {
         inlineData: {
-          data: image.split(",")[1], // Extract base64 part
-          mimeType: "image/jpeg",
+          data: base64Data,
+          mimeType: mimeType,
         },
       },
     ]);
 
     const response = await result.response;
-    const text = response.text();
+    let text = response.text();
     
-    logger.info("Vision API: Successfully parsed invoice data");
-    return NextResponse.json(JSON.parse(text));
+    // Clean potential markdown or extra whitespace
+    text = text.replace(/```json\n?/, "").replace(/\n?```/, "").trim();
+
+    logger.info("Vision API: Successfully received AI response");
+    
+    try {
+      const parsedData = JSON.parse(text);
+      return NextResponse.json(parsedData);
+    } catch (parseError) {
+      logger.error("Vision API: JSON parse error", { text });
+      throw new Error("Failed to parse tax data from response");
+    }
   } catch (error) {
     await reportError(error, "API:Vision_Parse", { 
       message: error.message 

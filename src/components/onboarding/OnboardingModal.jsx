@@ -3,11 +3,13 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, ArrowRight, X, ShieldCheck } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useOnboarding } from "@/lib/onboarding/state";
 
 export default function OnboardingModal() {
   const { isAllCompleted, completedCount, loading } = useOnboarding();
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (!loading && completedCount === 0) {
@@ -65,7 +67,10 @@ export default function OnboardingModal() {
             </div>
 
             <button 
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                setIsOpen(false);
+                router.push("/dashboard/settings");
+              }}
               className="group w-full py-6 rounded-[2.5rem] bg-slate-900 text-white font-black text-lg shadow-2xl flex items-center justify-center gap-4 hover:bg-primary transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-widest"
             >
               Empezar guía rápida <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />

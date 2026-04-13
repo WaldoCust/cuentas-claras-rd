@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { Settings, Shield, Bell, Cloud, CreditCard, ChevronRight, Save, Building2, ShieldCheck, Upload, FileCode } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import Modal from "@/components/Modal";
 import { useSearchParams, useRouter } from "next/navigation";
 import ProtectedAction from "@/components/auth/ProtectedAction";
