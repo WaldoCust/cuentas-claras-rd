@@ -15,9 +15,10 @@ export async function POST(req) {
       return NextResponse.json({ error: "Image data is required" }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash-latest"
-    });
+    const model = genAI.getGenerativeModel(
+      { model: "gemini-1.5-flash" },
+      { apiVersion: "v1" }
+    );
 
     const prompt = `
       You are an expert financial analyst in the Dominican Republic. 
