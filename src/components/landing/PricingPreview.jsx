@@ -9,7 +9,6 @@ export default function PricingPreview() {
     <section id="pricing" className="py-32 px-6 bg-slate-50/50">
       <div className="max-w-7xl mx-auto">
         <div className="glass-card rounded-[4rem] p-12 md:p-20 relative overflow-hidden flex flex-col lg:flex-row items-center gap-16 border-white bg-white/60 shadow-2xl shadow-slate-200/20">
-          <div className="flex-1 text-left relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full relative z-10">
             {/* Starter Plan */}
             <div className="glass-card bg-white/80 rounded-[3rem] p-10 border-slate-100 flex flex-col hover:border-primary/30 transition-all active:scale-[0.98]">
