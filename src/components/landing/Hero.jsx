@@ -24,17 +24,19 @@ export default function Hero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.8 }}
-          className="text-6xl md:text-[8rem] font-black tracking-tighter mb-10 leading-[0.85] text-slate-900"
+          className="text-6xl md:text-[8rem] font-black tracking-tighter mb-10 leading-[0.85]"
+          style={{ color: '#0f172a' }}
         >
           Reportes 606/607 <br />
-          <span className="text-primary glow-text drop-shadow-sm italic">en minutos, no horas.</span>
+          <span className="glow-text drop-shadow-sm italic" style={{ color: 'var(--primary)' }}>en minutos, no horas.</span>
         </motion.h1>
 
         <motion.p 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="max-w-2xl mx-auto text-slate-500 text-xl font-medium mb-16 leading-relaxed"
+          className="max-w-2xl mx-auto text-xl font-medium mb-16 leading-relaxed"
+          style={{ color: '#475569' }}
         >
           Simplifica tu trabajo contable y evita errores con la DGII. La plataforma elite diseñada para el mercado fiscal dominicano.
         </motion.p>

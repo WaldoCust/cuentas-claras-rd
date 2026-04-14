@@ -12,11 +12,11 @@ export default function Navbar() {
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30 group-hover:scale-110 transition-transform">
             <ShieldCheck className="w-6 h-6 text-white" />
           </div>
-          <span className="text-xl font-black tracking-tighter text-slate-900 italic">
-            CuentasClaras<span className="text-primary not-italic">RD</span>
+          <span className="text-xl font-black tracking-tighter italic" style={{ color: '#0f172a' }}>
+            CuentasClaras<span style={{ color: 'var(--primary)', fontStyle: 'normal' }}>RD</span>
           </span>
         </Link>
-        <div className="hidden md:flex items-center gap-10 text-[10px] font-black uppercase tracking-widest text-slate-600">
+        <div className="hidden md:flex items-center gap-10 text-[10px] font-black uppercase tracking-widest" style={{ color: '#475569' }}>
           <a href="#how-it-works" className="hover:text-primary transition-colors">Cómo funciona</a>
           <a href="#pricing" className="hover:text-primary transition-colors">Precios</a>
         </div>
