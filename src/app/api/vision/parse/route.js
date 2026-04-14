@@ -34,14 +34,17 @@ export async function POST(req) {
     const base64Data = image.includes(",") ? image.split(",")[1] : image;
 
     // Triple-Model Fallback Logic to handle regional 404s
-    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"];
+    const modelsToTry = ["models/gemini-1.5-flash", "models/gemini-1.5-pro", "models/gemini-1.5-flash-8b"];
     let result = null;
     let lastError = null;
 
     for (const modelName of modelsToTry) {
       try {
-        logger.info(`Vision API: Attempting scan with model ${modelName}`);
-        const model = genAI.getGenerativeModel({ model: modelName });
+        logger.info(`Vision API: Attempting scan with model ${modelName} on v1`);
+        const model = genAI.getGenerativeModel(
+          { model: modelName },
+          { apiVersion: "v1" }
+        );
         
         result = await model.generateContent([
           prompt,
