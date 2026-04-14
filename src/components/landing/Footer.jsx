@@ -1,6 +1,7 @@
 "use client";
 
 import { ShieldCheck } from "lucide-react";
+import Link from "next/link";
 
 export default function Footer() {
   return (
@@ -20,9 +21,9 @@ export default function Footer() {
           </p>
         </div>
         <div className="flex gap-12 text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase">
-          <a href="#" className="hover:text-primary transition-colors">Términos</a>
-          <a href="#" className="hover:text-primary transition-colors">Privacidad</a>
-          <a href="#" className="hover:text-primary transition-colors">Contacto</a>
+          <Link href="/terms" className="hover:text-primary transition-colors">Términos</Link>
+          <Link href="/privacy" className="hover:text-primary transition-colors">Privacidad</Link>
+          <Link href="/contact" className="hover:text-primary transition-colors">Contacto</Link>
         </div>
       </div>
     </footer>
