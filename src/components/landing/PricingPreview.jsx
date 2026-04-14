@@ -13,7 +13,7 @@ export default function PricingPreview() {
             {/* Starter Plan */}
             <div className="glass-card bg-white/80 rounded-[3rem] p-10 border-slate-100 flex flex-col hover:border-primary/30 transition-all active:scale-[0.98]">
               <div className="space-y-4 mb-8">
-                 <p className="text-[10px] uppercase font-black tracking-[0.3em] text-slate-400">Starter</p>
+                 <p className="text-[10px] uppercase font-black tracking-[0.3em]" style={{ color: '#475569' }}>Starter</p>
                  <div className="flex flex-col">
                     <h3 className="text-4xl font-black italic text-slate-900">RD$ 0</h3>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Gratis Siempre</p>
@@ -56,7 +56,7 @@ export default function PricingPreview() {
             {/* Contable Plan */}
             <div className="glass-card bg-white/80 rounded-[3rem] p-10 border-slate-100 flex flex-col hover:border-primary/30 transition-all active:scale-[0.98]">
               <div className="space-y-4 mb-8">
-                 <p className="text-[10px] uppercase font-black tracking-[0.3em] text-slate-400">Contable</p>
+                 <p className="text-[10px] uppercase font-black tracking-[0.3em]" style={{ color: '#475569' }}>Contable</p>
                  <div className="flex flex-col">
                     <h3 className="text-4xl font-black italic text-slate-900">RD$ 2,000</h3>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Por Mes</p>
