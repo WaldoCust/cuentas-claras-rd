@@ -15,10 +15,6 @@ export async function POST(req) {
       return NextResponse.json({ error: "Image data is required" }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({ 
-      model: "models/gemini-1.5-flash"
-    });
-
     const prompt = `
       You are an expert financial analyst in the Dominican Republic. 
       Analyze the attached image of an invoice/receipt and extract the following data into a clean JSON format:
@@ -34,20 +30,43 @@ export async function POST(req) {
       Return ONLY the raw JSON object. No markdown, no explanations.
     `;
 
-    logger.info("Vision API: Processing scan request");
-
     const mimeType = image.match(/data:(.*?);base64/)?.[1] || "image/jpeg";
     const base64Data = image.includes(",") ? image.split(",")[1] : image;
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: mimeType,
-        },
-      },
-    ]);
+    // Triple-Model Fallback Logic to handle regional 404s
+    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"];
+    let result = null;
+    let lastError = null;
+
+    for (const modelName of modelsToTry) {
+      try {
+        logger.info(`Vision API: Attempting scan with model ${modelName}`);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        
+        result = await model.generateContent([
+          prompt,
+          {
+            inlineData: {
+              data: base64Data,
+              mimeType: mimeType,
+            },
+          },
+        ]);
+        
+        if (result) {
+          logger.info(`Vision API: Success with model ${modelName}`);
+          break;
+        }
+      } catch (err) {
+        lastError = err;
+        logger.warn(`Vision API: Model ${modelName} failed or not found, falling back...`);
+        continue;
+      }
+    }
+
+    if (!result) {
+      throw lastError || new Error("No se pudo conectar con ningún motor de IA. Revisa tu API Key.");
+    }
 
     const response = await result.response;
     let text = response.text();
