@@ -16,33 +16,25 @@ export async function POST(req) {
     }
 
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-      }
+      model: "gemini-1.5-flash"
     });
 
     const prompt = `
       You are an expert financial analyst in the Dominican Republic. 
-      Analyze the attached image of an invoice/receipt and extract the following data into a strict JSON format:
+      Analyze the attached image of an invoice/receipt and extract the following data into a clean JSON format:
       
-      - rnc_supplier: The RNC or Cédula of the company issuing the invoice (format: 9 or 11 digits).
-      - ncf: The Number of Fiscal Receipt (NCF) (format: usually starting with B, E, etc., 11-13 characters).
-      - date: The date of emission in YYYY-MM-DD format.
-      - amount_gross: The total amount before ITBIS (monto gravado).
-      - amount_itbis: The ITBIS tax amount.
-      - supplier_name: The name of the business/seller.
-      - expense_type: Suggest a DGII 606 category code (01-11) based on the supplier:
-        01 (Personal), 02 (Supplies/Services), 03 (Rent), 04 (Assets), 05 (Representation), 
-        06 (Other), 07 (Financial), 08 (Extraordinary), 09 (Cost of Sales), 10 (Capital Assets), 11 (Insurance).
+      - rnc_supplier: The RNC or Cédula of the company issuing the invoice (9 or 11 digits).
+      - ncf: The Number of Fiscal Receipt (NCF) (e.g. B0100000001, E3100000001).
+      - date: Emission date in YYYY-MM-DD.
+      - amount_gross: Amount before ITBIS.
+      - amount_itbis: ITBIS tax amount.
+      - supplier_name: Business name.
+      - expense_type: DGII 606 category code (01-11).
 
-      Rules:
-      1. If you cannot find a field, return null for that field.
-      2. If multiple amounts are present, amount_gross is the subtotal and amount_itbis is the tax.
-      3. ONLY return the JSON object.
+      Return ONLY the raw JSON object. No markdown, no explanations.
     `;
 
-    logger.info("Vision API: Starting invoice parsing with Gemini 1.5 Flash");
+    logger.info("Vision API: Processing scan request");
 
     const mimeType = image.match(/data:(.*?);base64/)?.[1] || "image/jpeg";
     const base64Data = image.includes(",") ? image.split(",")[1] : image;
@@ -60,26 +52,27 @@ export async function POST(req) {
     const response = await result.response;
     let text = response.text();
     
-    // Clean potential markdown or extra whitespace
-    text = text.replace(/```json\n?/, "").replace(/\n?```/, "").trim();
-
-    logger.info("Vision API: Successfully received AI response");
+    // Nuclear cleaning for JSON extraction
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      logger.error("Vision API: No JSON found in response", { text });
+      throw new Error("El sistema no pudo leer los datos fiscales de esta imagen. Intenta con una foto más clara.");
+    }
     
     try {
-      const parsedData = JSON.parse(text);
+      const parsedData = JSON.parse(jsonMatch[0]);
+      logger.info("Vision API: Scan successful");
       return NextResponse.json(parsedData);
     } catch (parseError) {
-      logger.error("Vision API: JSON parse error", { text });
-      throw new Error("Failed to parse tax data from response");
+      logger.error("Vision API: JSON corruption", { text });
+      throw new Error("Error de formato en la lectura de IA.");
     }
   } catch (error) {
-    await reportError(error, "API:Vision_Parse", { 
-      message: error.message 
-    });
+    logger.error("Vision API Critical Error", { error: error.message });
     
     return NextResponse.json({ 
-      error: "Error interno procesando factura",
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: error.message || "Error interno procesando factura",
+      details: error.stack
     }, { status: 500 });
   }
 }
