@@ -20,14 +20,14 @@ export const generate606Text = (userRnc, period, purchases) => {
     if (!ncfRes.isValid) errors.push(`Fila ${rowNum}: ${ncfRes.error}`);
     if (!rncRes.isValid) errors.push(`Fila ${rowNum}: ${rncRes.error}`);
 
-    const rnc = p.rnc_target?.replace(/\D/g, "") || "";
-    const ncf = p.ncf || "";
-    const tipoGasto = p.revenue_type || "02";
+    const rnc = (p.rnc_target || p.rnc_supplier || "").replace(/\D/g, "");
+    const ncf = p.ncf || p.ncf_number || "";
+    const tipoGasto = p.expense_type || p.revenue_type || "02";
     const fecha = p.date_emission?.replace(/-/g, "") || "";
-    const total = parseFloat(p.amount_gross || 0).toFixed(2);
-    const itbis = parseFloat(p.amount_itbis || 0).toFixed(2);
+    const subtotal = parseFloat(p.amount_gross || p.subtotal || 0).toFixed(2);
+    const itbis = parseFloat(p.amount_itbis || p.itbis || 0).toFixed(2);
     
-    return `${rnc}|1|${tipoGasto}|${ncf}||${fecha}||${total}|${itbis}|0.00|0.00|0.00|0.00|0.00|0.00|0.00|0.00|0.00|0.00|0.00`;
+    return `${rnc}|1|${tipoGasto}|${ncf}||${fecha}||${subtotal}|${itbis}|0.00|0.00|0.00|0.00|0.00|0.00|0.00|0.00|0.00|0.00|0.00`;
   });
 
   if (errors.length > 0) {

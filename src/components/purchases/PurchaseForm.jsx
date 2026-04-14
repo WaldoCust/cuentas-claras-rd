@@ -1,55 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Building2, Hash, Calendar, DollarSign, Save, Loader2, AlertCircle, CreditCard, ShoppingBag, Info, Wallet } from "lucide-react";
 import EliteDropdown from "@/components/ui/EliteDropdown";
 import FieldError from "@/components/forms/FieldError";
 import { cn } from "@/lib/utils";
 import { EXPENSE_CATEGORIES } from "@/lib/validation/purchases";
-import { validateNCF } from "@/lib/validation/ncf";
-import { validateRNC } from "@/lib/validation/rnc";
-import { validateFiscalMath } from "@/lib/validation/amounts";
+import { validateForm } from "@/lib/validation/core";
+import { normalizePayload } from "@/lib/validation/normalize";
 
 export default function PurchaseForm({ initialData, onSubmit, onCancel, loading: externalLoading }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [errors, setErrors] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
     supplier_name: initialData?.supplier_name || "",
     rnc_target: initialData?.rnc_target || "",
     ncf: initialData?.ncf || "",
-    document_date: initialData?.date_emission || initialData?.document_date || new Date().toISOString().split('T')[0],
+    document_date: initialData?.date_emission || initialData?.document_date || initialData?.date || new Date().toISOString().split('T')[0],
     amount_gross: initialData?.amount_gross || 0,
     amount_itbis: initialData?.amount_itbis || 0,
-    revenue_type: initialData?.revenue_type || initialData?.expense_type || "02",
+    expense_type: initialData?.expense_type || initialData?.revenue_type || "02",
     payment_method: initialData?.payment_method || "Transferencia",
     is_deductible: initialData?.is_deductible !== undefined ? initialData.is_deductible : true,
     notes: initialData?.notes || ""
   });
-
-  const validateField = (name, value) => {
-    let error = null;
-    if (name === "ncf") {
-      const result = validateNCF(value);
-      if (!result.isValid) error = result.error;
-    }
-    if (name === "rnc_target") {
-      const result = validateRNC(value);
-      if (!result.isValid) error = result.error;
-    }
-    if (name === "amount_gross" || name === "amount_itbis") {
-      const other = name === "amount_gross" ? formData.amount_itbis : formData.amount_gross;
-      const gross = name === "amount_gross" ? value : formData.amount_gross;
-      const itbis = name === "amount_itbis" ? value : formData.amount_itbis;
-      const total = parseFloat(gross) + parseFloat(itbis);
-      const result = validateFiscalMath(gross, itbis, total);
-      if (!result.isValid) error = result.error;
-    }
-    
-    setErrors(prev => ({ ...prev, [name]: error }));
-    return !error;
-  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -68,13 +44,13 @@ export default function PurchaseForm({ initialData, onSubmit, onCancel, loading:
     });
 
     // Clear error on change
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: null }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
     }
-  };
-
-  const handleBlur = (e) => {
-    validateField(e.target.name, e.target.value);
   };
 
   const handleSubmit = async (e) => {
@@ -83,30 +59,37 @@ export default function PurchaseForm({ initialData, onSubmit, onCancel, loading:
     setError(null);
 
     // Final full validation
-    const ncfRes = validateNCF(formData.ncf);
-    const rncRes = validateRNC(formData.rnc_target);
-    const mathRes = validateFiscalMath(
-      formData.amount_gross, 
-      formData.amount_itbis, 
-      parseFloat(formData.amount_gross) + parseFloat(formData.amount_itbis)
-    );
+    const validationFields = ['supplier_name', 'rnc_target', 'ncf', 'document_date', 'amount_gross', 'amount_itbis'];
+    const { isValid, errors } = validateForm({
+      ...formData,
+      subtotal: formData.amount_gross,
+      itbis: formData.amount_itbis,
+      total: parseFloat(formData.amount_gross) + parseFloat(formData.amount_itbis)
+    }, validationFields);
 
-    if (!ncfRes.isValid || !rncRes.isValid || !mathRes.isValid) {
-      setErrors({
-        ncf: ncfRes.error,
-        rnc_target: rncRes.error,
-        amount_gross: mathRes.error
-      });
+    if (!isValid) {
+      setFieldErrors(errors);
       setLoading(false);
       return;
     }
 
     try {
+      const normalized = normalizePayload(formData, {
+        supplier_name: 'string',
+        rnc_target: 'rnc',
+        ncf: 'ncf',
+        document_date: 'string',
+        amount_gross: 'number',
+        amount_itbis: 'number',
+        expense_type: 'string',
+        payment_method: 'string',
+        is_deductible: 'boolean',
+        notes: 'string'
+      });
+
       await onSubmit({
-        ...formData,
-        date_emission: formData.document_date,
-        amount_gross: parseFloat(formData.amount_gross),
-        amount_itbis: parseFloat(formData.amount_itbis)
+        ...normalized,
+        date_emission: normalized.document_date
       });
     } catch (err) {
       setError(err.message);
@@ -132,13 +115,16 @@ export default function PurchaseForm({ initialData, onSubmit, onCancel, loading:
               <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 pointer-events-none" />
               <input 
                 name="supplier_name"
-                required
                 value={formData.supplier_name}
                 onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                className={cn(
+                  "w-full bg-slate-50 border rounded-2xl py-4 pl-12 pr-6 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 transition-all",
+                  fieldErrors.supplier_name ? "border-red-300 focus:ring-red-100" : "border-slate-100 focus:ring-primary/20"
+                )}
                 placeholder="Nombre de la empresa"
               />
             </div>
+            <FieldError error={fieldErrors.supplier_name} />
           </div>
 
           <div className="space-y-2">
@@ -147,18 +133,16 @@ export default function PurchaseForm({ initialData, onSubmit, onCancel, loading:
               <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 pointer-events-none" />
               <input 
                 name="rnc_target"
-                required
                 value={formData.rnc_target}
                 onChange={handleChange}
-                onBlur={handleBlur}
                 className={cn(
                   "w-full bg-slate-50 border rounded-2xl py-4 pl-12 pr-6 text-sm font-mono font-black text-slate-900 focus:outline-none focus:ring-2 transition-all",
-                  errors.rnc_target ? "border-primary ring-primary/10" : "border-slate-100 focus:ring-primary/20"
+                  fieldErrors.rnc_target ? "border-red-300 focus:ring-red-100" : "border-slate-100 focus:ring-primary/20"
                 )}
                 placeholder="000000000"
               />
             </div>
-            <FieldError error={errors.rnc_target} />
+            <FieldError error={fieldErrors.rnc_target} />
           </div>
         </div>
 
@@ -169,19 +153,17 @@ export default function PurchaseForm({ initialData, onSubmit, onCancel, loading:
               <Info className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 pointer-events-none" />
               <input 
                 name="ncf"
-                required
                 maxLength={11}
                 value={formData.ncf}
                 onChange={handleChange}
-                onBlur={handleBlur}
                 className={cn(
                   "w-full bg-slate-50 border rounded-2xl py-4 pl-12 pr-6 text-sm font-mono font-black text-slate-900 focus:outline-none focus:ring-2 transition-all",
-                  errors.ncf ? "border-primary ring-primary/10" : "border-slate-100 focus:ring-primary/20"
+                  fieldErrors.ncf ? "border-red-300 focus:ring-red-100" : "border-slate-100 focus:ring-primary/20"
                 )}
                 placeholder="B0100000001"
               />
             </div>
-            <FieldError error={errors.ncf} />
+            <FieldError error={fieldErrors.ncf} />
           </div>
 
           <div className="space-y-2">
@@ -191,13 +173,16 @@ export default function PurchaseForm({ initialData, onSubmit, onCancel, loading:
               <input 
                 name="document_date"
                 type="date"
-                required
                 value={formData.document_date}
                 onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                className={cn(
+                  "w-full bg-slate-50 border rounded-2xl py-4 pl-12 pr-6 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 transition-all",
+                  fieldErrors.document_date ? "border-red-300 focus:ring-red-100" : "border-slate-100 focus:ring-primary/20"
+                )}
                 max={new Date().toISOString().split('T')[0]}
               />
             </div>
+            <FieldError error={fieldErrors.document_date} />
           </div>
         </div>
 
@@ -210,17 +195,15 @@ export default function PurchaseForm({ initialData, onSubmit, onCancel, loading:
                 name="amount_gross"
                 type="number"
                 step="0.01"
-                required
                 value={formData.amount_gross}
                 onChange={handleChange}
-                onBlur={handleBlur}
                 className={cn(
                   "w-full bg-slate-900 border rounded-2xl py-4 pl-10 pr-4 text-sm font-black text-white focus:outline-none focus:ring-2 transition-all text-center",
-                  errors.amount_gross ? "border-primary ring-primary/40" : "border-slate-800 focus:ring-primary/40"
+                  fieldErrors.amount_gross ? "border-red-300 focus:ring-red-100" : "border-slate-800 focus:ring-primary/40"
                 )}
               />
             </div>
-            <FieldError error={errors.amount_gross} />
+            <FieldError error={fieldErrors.amount_gross} />
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">ITBIS (Facturado)</label>
@@ -228,18 +211,21 @@ export default function PurchaseForm({ initialData, onSubmit, onCancel, loading:
               name="amount_itbis"
               type="number"
               step="0.01"
-              required
               value={formData.amount_itbis}
               onChange={handleChange}
-              onBlur={handleBlur}
-              className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-4 text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-center"
+              className={cn(
+                "w-full bg-slate-50 border rounded-2xl py-4 px-4 text-sm font-black text-slate-900 focus:outline-none focus:ring-2 transition-all text-center",
+                fieldErrors.itbis ? "border-red-300 focus:ring-red-100" : "border-slate-100 focus:ring-primary/20"
+              )}
             />
+            <FieldError error={fieldErrors.itbis} />
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1 text-center block">Total Pagado</label>
             <div className="w-full bg-primary/5 border border-primary/20 rounded-2xl py-4 px-4 text-sm font-black text-slate-900 text-center">
               RD$ {(parseFloat(formData.amount_gross) + parseFloat(formData.amount_itbis || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
+            <FieldError error={fieldErrors.total} />
           </div>
         </div>
 
@@ -251,8 +237,8 @@ export default function PurchaseForm({ initialData, onSubmit, onCancel, loading:
               value: code,
               label: `${label} (${code})`
             }))}
-            value={formData.revenue_type}
-            onChange={(val) => setFormData(p => ({ ...p, revenue_type: val }))}
+            value={formData.expense_type}
+            onChange={(val) => setFormData(p => ({ ...p, expense_type: val }))}
           />
 
           <EliteDropdown 

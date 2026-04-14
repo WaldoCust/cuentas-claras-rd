@@ -3,9 +3,12 @@
 import { useState, useEffect } from "react";
 import { User, Calendar, DollarSign, Hash, Save, Send, Loader2, AlertCircle, Building2, UserCircle2 } from "lucide-react";
 import { getClients } from "@/lib/data/clients";
-import { validateInvoiceTotals, NCF_TYPES, checkProfileReadiness } from "@/lib/validation/invoices";
+import { NCF_TYPES, checkProfileReadiness } from "@/lib/validation/invoices";
 import { getProfile } from "@/lib/data/profile";
+import { validateForm } from "@/lib/validation/core";
+import { normalizePayload } from "@/lib/validation/normalize";
 import EliteDropdown from "@/components/ui/EliteDropdown";
+import FieldError from "@/components/forms/FieldError";
 import { cn } from "@/lib/utils";
 
 export default function InvoiceForm({ onSubmit, onCancel, initialData }) {
@@ -13,6 +16,7 @@ export default function InvoiceForm({ onSubmit, onCancel, initialData }) {
   const [clients, setClients] = useState([]);
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [readiness, setReadiness] = useState({ isReady: true, missing: [] });
 
   const [formData, setFormData] = useState({
@@ -35,9 +39,11 @@ export default function InvoiceForm({ onSubmit, onCancel, initialData }) {
           getClients(),
           getProfile()
         ]);
-        setClients(clientsData);
+        setClients(clientsData || []);
         setProfile(profileData);
-        setReadiness(checkProfileReadiness(profileData));
+        if (profileData) {
+          setReadiness(checkProfileReadiness(profileData));
+        }
       } catch (err) {
         console.error("Error loading form dependencies:", err);
       }
@@ -46,42 +52,65 @@ export default function InvoiceForm({ onSubmit, onCancel, initialData }) {
   }, []);
 
   const calculateTotals = (sub) => {
-    const itbis = sub * 0.18;
-    const total = sub + itbis;
+    const itbis = Math.round(sub * 0.18 * 100) / 100;
+    const total = Math.round((sub + itbis) * 100) / 100;
     setFormData(prev => ({ 
       ...prev, 
       subtotal: sub,
-      itbis: parseFloat(itbis.toFixed(2)),
-      total: parseFloat(total.toFixed(2))
+      itbis,
+      total
     }));
   };
 
   const handleSubtotalChange = (e) => {
     const val = parseFloat(e.target.value) || 0;
     calculateTotals(val);
+    if (fieldErrors.subtotal) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next.subtotal;
+        delete next.total;
+        return next;
+      });
+    }
   };
 
   const handleSubmit = async (e, targetStatus = 'issued') => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setLoading(true);
     setError(null);
 
-    // If attempting to issue, check profile readiness
+    // 1. Check Profile Readiness for legal emission
     if (targetStatus === 'issued' && !readiness.isReady) {
       setError(`No puedes emitir facturas legales. Faltan datos en tu perfil: ${readiness.missing.join(", ")}`);
       setLoading(false);
       return;
     }
 
-    if (!formData.client_id) {
-       setError("Debes seleccionar un cliente");
-       setLoading(false);
-       return;
+    // 2. Validate Form Data
+    const { isValid, errors } = validateForm(formData, ['client_id', 'date_emission', 'subtotal']);
+    if (!isValid) {
+      setFieldErrors(errors);
+      setLoading(false);
+      return;
     }
 
     try {
+      const normalized = normalizePayload(formData, {
+        client_id: 'string',
+        date_emission: 'string',
+        subtotal: 'number',
+        itbis: 'number',
+        total: 'number',
+        ncf_type: 'string',
+        ncf_number: 'ncf',
+        notes: 'string',
+        currency: 'string'
+      });
+
       await onSubmit({
-        ...formData,
+        ...normalized,
+        revenue_type: formData.ncf_type === '01' ? '01' : '02', // Auto-map NCF type to Revenue type for 607 compliance
         status: targetStatus
       });
     } catch (err) {
@@ -114,36 +143,59 @@ export default function InvoiceForm({ onSubmit, onCancel, initialData }) {
       )}
 
       <div className="space-y-6">
-        {/* Client Selection */}
-        <EliteDropdown 
-          label="Seleccionar Cliente"
-          icon={UserCircle2}
-          placeholder="-- Seleccionar de la cartera --"
-          options={clients.map(c => ({
-            value: c.id,
-            label: `${c.business_name} (${c.rnc_or_cedula})`,
-            icon: Building2
-          }))}
-          value={formData.client_id}
-          onChange={(val) => setFormData(p => ({ ...p, client_id: val }))}
-        />
+        <div className="space-y-2">
+          <EliteDropdown 
+            label="Seleccionar Cliente"
+            icon={UserCircle2}
+            placeholder="-- Seleccionar de la cartera --"
+            options={clients.map(c => ({
+              value: c.id,
+              label: `${c.business_name} (${c.rnc_or_cedula})`,
+              icon: Building2
+            }))}
+            value={formData.client_id}
+            onChange={(val) => {
+              setFormData(p => ({ ...p, client_id: val }));
+              if (fieldErrors.client_id) {
+                setFieldErrors(prev => {
+                  const next = { ...prev };
+                  delete next.client_id;
+                  return next;
+                });
+              }
+            }}
+          />
+          <FieldError error={fieldErrors.client_id} />
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Issue Date */}
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha de Emisión</label>
             <div className="relative">
-              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
+              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 pointer-events-none" />
               <input 
                 type="date"
                 value={formData.date_emission}
-                onChange={(e) => setFormData(p => ({ ...p, date_emission: e.target.value }))}
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                onChange={(e) => {
+                  setFormData(p => ({ ...p, date_emission: e.target.value }));
+                  if (fieldErrors.date_emission) {
+                    setFieldErrors(p => {
+                      const n = {...p};
+                      delete n.date_emission;
+                      return n;
+                    });
+                  }
+                }}
+                className={cn(
+                   "w-full bg-slate-50 border rounded-2xl py-4 pl-12 pr-6 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 transition-all",
+                   fieldErrors.date_emission ? "border-red-300 focus:ring-red-100" : "border-slate-100 focus:ring-primary/20"
+                )}
+                max={new Date().toISOString().split('T')[0]}
               />
             </div>
+            <FieldError error={fieldErrors.date_emission} />
           </div>
 
-          {/* Fiscal Type */}
           <EliteDropdown 
             label="Tipo de Comprobante"
             options={Object.entries(NCF_TYPES).map(([code, label]) => ({
@@ -156,7 +208,6 @@ export default function InvoiceForm({ onSubmit, onCancel, initialData }) {
           />
         </div>
 
-        {/* Amounts */}
         <div className="p-8 rounded-[2.5rem] bg-slate-900 shadow-2xl space-y-6">
           <div className="flex justify-between items-center pb-6 border-b border-white/10">
              <h4 className="text-xs font-black text-white uppercase tracking-widest">Resumen Financiero</h4>
@@ -171,9 +222,13 @@ export default function InvoiceForm({ onSubmit, onCancel, initialData }) {
                  step="0.01"
                  value={formData.subtotal}
                  onChange={handleSubtotalChange}
-                 className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-lg font-black text-white focus:outline-none focus:ring-2 focus:ring-primary/40 text-center"
+                 className={cn(
+                   "w-full bg-white/5 border rounded-2xl py-4 px-6 text-lg font-black text-white focus:outline-none focus:ring-2 text-center transition-all",
+                   fieldErrors.subtotal ? "border-red-300 focus:ring-red-100" : "border-white/10 focus:ring-primary/40"
+                 )}
                  placeholder="0.00"
                />
+               <FieldError error={fieldErrors.subtotal} />
             </div>
             <div className="space-y-2">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">ITBIS (18%)</label>
@@ -186,6 +241,7 @@ export default function InvoiceForm({ onSubmit, onCancel, initialData }) {
                <div className="w-full bg-primary/10 border border-primary/20 rounded-2xl py-4 px-6 text-lg font-black text-white text-center">
                  {formData.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                </div>
+               <FieldError error={fieldErrors.total} />
             </div>
           </div>
         </div>
@@ -206,7 +262,7 @@ export default function InvoiceForm({ onSubmit, onCancel, initialData }) {
          <button 
            type="button"
            onClick={onCancel}
-           className="px-8 py-5 rounded-2xl bg-white border border-slate-100 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+           className="px-8 py-5 rounded-2xl bg-white border border-slate-100 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all font-bold"
          >
            Descartar
          </button>

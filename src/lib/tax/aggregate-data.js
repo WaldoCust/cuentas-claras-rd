@@ -11,16 +11,17 @@ export const aggregateFiscalData = (sales, purchases) => {
 
   const summaries = {
     revenue: {
-      gross: activeSales.reduce((acc, s) => acc + (parseFloat(s.amount_gross) || 0), 0),
-      itbis: activeSales.reduce((acc, s) => acc + (parseFloat(s.amount_itbis) || 0), 0),
+      gross: activeSales.reduce((acc, s) => acc + (parseFloat(s.subtotal || s.amount_gross) || 0), 0),
+      itbis: activeSales.reduce((acc, s) => acc + (parseFloat(s.itbis || s.amount_itbis) || 0), 0),
       count: activeSales.length
     },
     expenses: {
-      gross: activePurchases.reduce((acc, p) => acc + (parseFloat(p.amount_gross) || 0), 0),
-      itbis: activePurchases.reduce((acc, p) => acc + (parseFloat(p.amount_itbis) || 0), 0), // Total ITBIS paid
+      gross: activePurchases.reduce((acc, p) => acc + (parseFloat(p.subtotal || p.amount_gross) || 0), 0),
+      itbis: activePurchases.reduce((acc, p) => acc + (parseFloat(p.itbis || p.amount_itbis) || 0), 0), // Total ITBIS paid
       deductible_itbis: activePurchases.reduce((acc, p) => {
         // Only count ITBIS if marked as deductible
-        return acc + (p.is_deductible ? (parseFloat(p.amount_itbis) || 0) : 0);
+        const itbisVal = parseFloat(p.itbis || p.amount_itbis || 0);
+        return acc + (p.is_deductible ? itbisVal : 0);
       }, 0),
       count: activePurchases.length
     }

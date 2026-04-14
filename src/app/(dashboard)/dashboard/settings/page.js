@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { Settings, Shield, Bell, Cloud, CreditCard, ChevronRight, Save, Building2, ShieldCheck, Upload, FileCode } from "lucide-react";
+import { Settings, Shield, Bell, Cloud, CreditCard, ChevronRight, Save, Building2, ShieldCheck, Upload, FileCode, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Modal from "@/components/Modal";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -9,8 +9,12 @@ import ProtectedAction from "@/components/auth/ProtectedAction";
 import RoleGate from "@/components/auth/RoleGate";
 import { useAuth } from "@/components/providers/AuthProvider";
 
+import { getProfile, updateProfile } from "@/lib/data/profile";
+
 function SettingsContent() {
   const [activeModal, setActiveModal] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [saving, setSaving] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const { role } = useAuth();
@@ -20,9 +24,36 @@ function SettingsContent() {
     if (setup === "signature") {
       setActiveModal("signature");
     }
+    
+    // Fetch profile
+    const fetchProfile = async () => {
+      const data = await getProfile();
+      if (data) setProfile(data);
+    };
+    fetchProfile();
   }, [searchParams]);
 
   const handleClose = () => setActiveModal(null);
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const formData = new FormData(e.target);
+      const data = {
+        rnc: formData.get("rnc"),
+        business_name: formData.get("business_name"),
+        address: formData.get("address")
+      };
+      await updateProfile(data);
+      setProfile(prev => ({ ...prev, ...data }));
+      handleClose();
+    } catch (err) {
+      alert("Error guardando el perfil: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const sections = [
     {
@@ -119,7 +150,7 @@ function SettingsContent() {
         </div>
       </RoleGate>
 
-      {/* Modals and forms... (identical to previous implementation) */}
+      {/* Modals and forms */}
       <Modal
         isOpen={activeModal === "signature"}
         onClose={handleClose}
@@ -168,40 +199,50 @@ function SettingsContent() {
         onClose={handleClose}
         title="Perfil de Empresa"
       >
-        <div className="space-y-6">
+        <form onSubmit={handleSaveProfile} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">RNC Empresa</label>
               <input 
+                name="rnc"
                 type="text" 
-                defaultValue="131-00000-1"
+                defaultValue={profile?.rnc || ""}
+                placeholder="131-00000-1"
+                required
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-5 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre Comercial</label>
               <input 
+                name="business_name"
                 type="text" 
-                defaultValue="Santiago Vertical SRL"
+                defaultValue={profile?.business_name || ""}
+                placeholder="Mi Negocio SRL"
+                required
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-5 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dirección Fiscal en Santiago</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dirección Fiscal</label>
             <textarea 
+              name="address"
               rows={3}
-              defaultValue="Calle del Sol #123, Villa Olga, Santiago de los Caballeros"
+              defaultValue={profile?.address || ""}
+              placeholder="Calle, Número, Ciudad..."
               className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-5 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
             />
           </div>
           <button 
-            onClick={handleClose}
-            className="w-full py-5 rounded-2xl bg-primary text-white font-black shadow-xl shadow-primary/30 flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform uppercase text-xs tracking-widest mt-4"
+            type="submit"
+            disabled={saving}
+            className="w-full py-5 rounded-2xl bg-primary text-white font-black shadow-xl shadow-primary/30 flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform uppercase text-xs tracking-widest mt-4 disabled:opacity-50"
           >
-            <Save className="w-5 h-5" /> Guardar Cambios
+            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+            {saving ? "Guardando..." : "Guardar Cambios"}
           </button>
-        </div>
+        </form>
       </Modal>
 
       <Modal

@@ -26,8 +26,8 @@ export default function Hero() {
           transition={{ delay: 0.1, duration: 0.8 }}
           className="text-6xl md:text-[8rem] font-black tracking-tighter mb-10 leading-[0.85] text-slate-900"
         >
-          Genera tu 606 <br />
-          <span className="text-primary glow-text drop-shadow-sm italic">sin estrés.</span>
+          Reportes 606/607 <br />
+          <span className="text-primary glow-text drop-shadow-sm italic">en minutos, no horas.</span>
         </motion.h1>
 
         <motion.p 
@@ -36,8 +36,7 @@ export default function Hero() {
           transition={{ delay: 0.2 }}
           className="max-w-2xl mx-auto text-slate-500 text-xl font-medium mb-16 leading-relaxed"
         >
-          Sube tus facturas y obtén tu reporte listo para la DGII en minutos. 
-          Automatiza el trabajo pesado y evita errores que te cuestan dinero.
+          Simplifica tu trabajo contable y evita errores con la DGII. La plataforma elite diseñada para el mercado fiscal dominicano.
         </motion.p>
 
         <motion.div 
@@ -50,13 +49,13 @@ export default function Hero() {
             href="/signup" 
             className="group px-10 py-5 rounded-[2rem] bg-slate-900 text-white font-black text-lg shadow-2xl shadow-slate-900/20 flex items-center gap-4 hover:scale-[1.05] transition-all hover:bg-primary hover:shadow-primary/30"
           >
-            Subir mi primera factura <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            Empezar Gratis <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link 
             href="#how-it-works"
             className="text-sm font-black text-slate-400 hover:text-primary transition-colors flex items-center gap-2 uppercase tracking-widest"
           >
-            Ver cómo funciona
+            Ver demo rápida
           </Link>
         </motion.div>
 

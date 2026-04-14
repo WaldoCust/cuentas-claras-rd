@@ -10,14 +10,14 @@ import FieldError from "@/components/forms/FieldError";
 import { cn } from "@/lib/utils";
 import { REVENUE_CATEGORIES } from "@/lib/validation/sales";
 import { getClients } from "@/lib/data/clients";
-import { validateNCF } from "@/lib/validation/ncf";
-import { validateFiscalMath } from "@/lib/validation/amounts";
+import { validateForm } from "@/lib/validation/core";
+import { normalizePayload } from "@/lib/validation/normalize";
 
 export default function SaleForm({ initialData, onSubmit, onCancel, loading: externalLoading }) {
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState([]);
   const [error, setError] = useState(null);
-  const [errors, setErrors] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
     client_id: initialData?.client_id || "",
@@ -42,26 +42,6 @@ export default function SaleForm({ initialData, onSubmit, onCancel, loading: ext
     fetchClients();
   }, []);
 
-  const validateField = (name, value) => {
-    let error = null;
-    
-    if (name === "ncf" && value) {
-      const result = validateNCF(value);
-      if (!result.isValid) error = result.error;
-    }
-    
-    if (name === "amount_gross" || name === "amount_itbis") {
-      const gross = name === "amount_gross" ? value : formData.amount_gross;
-      const itbis = name === "amount_itbis" ? value : formData.amount_itbis;
-      const total = parseFloat(gross) + parseFloat(itbis);
-      const result = validateFiscalMath(gross, itbis, total);
-      if (!result.isValid) error = result.error;
-    }
-    
-    setErrors(prev => ({ ...prev, [name]: error }));
-    return !error;
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => {
@@ -75,13 +55,13 @@ export default function SaleForm({ initialData, onSubmit, onCancel, loading: ext
       return newData;
     });
 
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: null }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
     }
-  };
-
-  const handleBlur = (e) => {
-    validateField(e.target.name, e.target.value);
   };
 
   const handleSubmit = async (e) => {
@@ -89,28 +69,37 @@ export default function SaleForm({ initialData, onSubmit, onCancel, loading: ext
     setLoading(true);
     setError(null);
 
-    const ncfRes = formData.ncf ? validateNCF(formData.ncf) : { isValid: true };
-    const mathRes = validateFiscalMath(
-      formData.amount_gross, 
-      formData.amount_itbis, 
-      parseFloat(formData.amount_gross) + parseFloat(formData.amount_itbis)
-    );
+    const validationFields = ['date_emission', 'amount_gross', 'amount_itbis'];
+    if (formData.ncf) validationFields.push('ncf');
 
-    if (!ncfRes.isValid || !mathRes.isValid) {
-      setErrors({
-        ncf: ncfRes.error,
-        amount_gross: mathRes.error
-      });
+    const { isValid, errors } = validateForm({
+      ...formData,
+      subtotal: formData.amount_gross,
+      itbis: formData.amount_itbis,
+      total: parseFloat(formData.amount_gross) + parseFloat(formData.amount_itbis)
+    }, validationFields);
+
+    if (!isValid) {
+      setFieldErrors(errors);
       setLoading(false);
       return;
     }
 
     try {
+      const normalized = normalizePayload(formData, {
+        client_id: 'string',
+        ncf: 'ncf',
+        date_emission: 'string',
+        amount_gross: 'number',
+        amount_itbis: 'number',
+        revenue_type: 'string',
+        notes: 'string',
+        source_type: 'string'
+      });
+
       await onSubmit({
-        ...formData,
-        amount_gross: parseFloat(formData.amount_gross),
-        amount_itbis: parseFloat(formData.amount_itbis),
-        total: parseFloat(formData.amount_gross) + parseFloat(formData.amount_itbis)
+        ...normalized,
+        total: normalized.amount_gross + normalized.amount_itbis
       });
     } catch (err) {
       setError(err.message);
@@ -144,7 +133,7 @@ export default function SaleForm({ initialData, onSubmit, onCancel, loading: ext
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Número de NCF</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Número de NCF (Opcional)</label>
             <div className="relative">
               <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 pointer-events-none" />
               <input 
@@ -152,15 +141,14 @@ export default function SaleForm({ initialData, onSubmit, onCancel, loading: ext
                 maxLength={11}
                 value={formData.ncf}
                 onChange={handleChange}
-                onBlur={handleBlur}
                 className={cn(
-                  "w-full bg-slate-50 border rounded-2xl py-4 pl-12 pr-6 text-sm font-mono font-black text-slate-900 focus:outline-none focus:ring-2 transition-all text-center md:text-left",
-                  errors.ncf ? "border-primary ring-primary/10" : "border-slate-100 focus:ring-primary/20"
+                  "w-full bg-slate-50 border rounded-2xl py-4 pl-12 pr-6 text-sm font-mono font-black text-slate-900 focus:outline-none focus:ring-2 transition-all",
+                  fieldErrors.ncf ? "border-red-300 focus:ring-red-100" : "border-slate-100 focus:ring-primary/20"
                 )}
                 placeholder="B0100000001"
               />
             </div>
-            <FieldError error={errors.ncf} />
+            <FieldError error={fieldErrors.ncf} />
           </div>
 
           <div className="space-y-2">
@@ -170,13 +158,16 @@ export default function SaleForm({ initialData, onSubmit, onCancel, loading: ext
               <input 
                 name="date_emission"
                 type="date"
-                required
                 value={formData.date_emission}
                 onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                className={cn(
+                  "w-full bg-slate-50 border rounded-2xl py-4 pl-12 pr-6 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 transition-all",
+                  fieldErrors.date_emission ? "border-red-300 focus:ring-red-100" : "border-slate-100 focus:ring-primary/20"
+                )}
                 max={new Date().toISOString().split('T')[0]}
               />
             </div>
+            <FieldError error={fieldErrors.date_emission} />
           </div>
         </div>
 
@@ -193,17 +184,15 @@ export default function SaleForm({ initialData, onSubmit, onCancel, loading: ext
                  name="amount_gross"
                  type="number"
                  step="0.01"
-                 required
                  value={formData.amount_gross}
                  onChange={handleChange}
-                 onBlur={handleBlur}
                  className={cn(
                    "w-full bg-white/5 border rounded-2xl py-4 px-6 text-lg font-black text-white focus:outline-none focus:ring-2 text-center",
-                   errors.amount_gross ? "border-primary ring-primary/40" : "border-white/10 focus:ring-primary/40"
+                   fieldErrors.amount_gross ? "border-red-300 focus:ring-red-100" : "border-white/10 focus:ring-primary/40"
                  )}
                  placeholder="0.00"
                />
-               <FieldError error={errors.amount_gross} />
+               <FieldError error={fieldErrors.amount_gross} />
             </div>
             <div className="space-y-2">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">ITBIS (Facturado)</label>
@@ -213,9 +202,10 @@ export default function SaleForm({ initialData, onSubmit, onCancel, loading: ext
             </div>
             <div className="space-y-2">
                <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1 text-center block">Total Venta</label>
-               <div className="w-full bg-primary/10 border border-primary/20 rounded-2xl py-4 px-6 text-lg font-black text-white text-center">
+               <div className="w-full bg-primary/10 border border-primary/20 rounded-2xl py-4 px-4 text-lg font-black text-white text-center">
                  RD$ {(parseFloat(formData.amount_gross) + parseFloat(formData.amount_itbis || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                </div>
+               <FieldError error={fieldErrors.total} />
             </div>
           </div>
         </div>

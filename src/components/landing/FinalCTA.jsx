@@ -29,8 +29,8 @@ export default function FinalCTA() {
               viewport={{ once: true }}
               className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.9]"
             >
-              Empieza hoy y <br />
-              <span className="italic">olvídate del 606</span>
+              Organiza tu negocio <br />
+              <span className="italic">hoy mismo</span>
             </motion.h2>
 
             <motion.p 
@@ -39,7 +39,7 @@ export default function FinalCTA() {
               viewport={{ once: true }}
               className="text-white/80 text-xl font-medium max-w-xl mx-auto"
             >
-              Únete a cientos de emprendedores dominicanos que ya automatizaron su contabilidad.
+              Únete a cientos de emprendedores dominicanos que ya simplificaron su relación con la DGII.
             </motion.p>
 
             <motion.div 
@@ -52,7 +52,7 @@ export default function FinalCTA() {
                 href="/signup" 
                 className="inline-flex items-center gap-4 px-12 py-6 rounded-[2.5rem] bg-white text-primary font-black text-xl shadow-2xl hover:scale-[1.05] transition-transform uppercase tracking-widest"
               >
-                Subir mi primera factura <ArrowRight className="w-6 h-6" />
+                Crear mi Cuenta <ArrowRight className="w-6 h-6" />
               </Link>
             </motion.div>
           </div>

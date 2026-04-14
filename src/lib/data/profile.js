@@ -8,10 +8,13 @@ export const getProfile = async () => {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
-    .eq('id', user.id)
+    .eq('user_id', user.id)
     .single();
 
-  if (error) return null;
+  if (error) {
+    console.error("Error fetching profile:", error);
+    return null;
+  }
   return data;
 };
 
@@ -20,13 +23,23 @@ export const updateProfile = async (profileData) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Auth required');
 
+  // Map incoming data to schema
+  const payload = {
+    user_id: user.id,
+    business_name: profileData.business_name || null,
+    rnc: profileData.rnc || null,
+    address: profileData.address || null,
+    phone: profileData.phone || null,
+    full_name: profileData.full_name || null,
+    updated_at: new Date().toISOString()
+  };
+
   const { error } = await supabase
     .from('profiles')
-    .upsert({
-      id: user.id,
-      ...profileData,
-      updated_at: new Date().toISOString()
-    });
+    .upsert(payload, { onConflict: 'user_id' });
 
-  if (error) throw error;
+  if (error) {
+    console.error("Error updating profile:", error);
+    throw new Error("No pudimos guardar los cambios del perfil.");
+  }
 };

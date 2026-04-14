@@ -1,34 +1,43 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FolderOpen, Plus } from "lucide-react";
+import { FolderOpen, ArrowRight, Plus } from "lucide-react";
 
 export default function EmptyState({ 
-  icon: Icon = FolderOpen, 
-  title = "No hay registros", 
-  message = "Aún no se ha detectado información para esta categoría.",
-  actionLabel,
-  onAction
+  title, 
+  message, 
+  actionLabel, 
+  onAction, 
+  icon: Icon = FolderOpen 
 }) {
   return (
-    <div className="py-24 text-center space-y-8 relative">
-      <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center mx-auto border border-slate-100 shadow-inner group-hover:scale-105 transition-transform">
-        <Icon className="w-10 h-10 text-slate-200" />
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col items-center justify-center p-16 rounded-[3rem] bg-slate-50 border-2 border-dashed border-slate-200 text-center"
+    >
+      <div className="w-20 h-20 rounded-[2rem] bg-white shadow-xl flex items-center justify-center mb-8 border border-slate-100">
+         <Icon className="w-10 h-10 text-slate-300" />
       </div>
-      <div className="space-y-2">
-        <h4 className="text-xl font-black text-slate-900 italic tracking-tight">{title}</h4>
-        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest max-w-xs mx-auto leading-relaxed">
-          {message}
-        </p>
-      </div>
+      
+      <h3 className="text-2xl font-black text-slate-900 mb-3 tracking-tight italic">
+        {title}
+      </h3>
+      
+      <p className="max-w-xs text-slate-500 font-medium text-sm leading-loose mb-10">
+        {message}
+      </p>
+
       {actionLabel && (
-        <button 
+        <button
           onClick={onAction}
-          className="px-8 py-4 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-xl shadow-slate-900/10"
+          className="group px-10 py-5 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-slate-900/20 hover:scale-[1.05] active:scale-95 transition-all flex items-center gap-3"
         >
-          <Plus className="w-4 h-4 inline-block mr-2 -mt-0.5" /> {actionLabel}
+          <Plus className="w-4 h-4" />
+          {actionLabel}
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
         </button>
       )}
-    </div>
+    </motion.div>
   );
 }

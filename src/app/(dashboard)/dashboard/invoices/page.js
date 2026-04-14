@@ -12,9 +12,11 @@ import ProtectedAction from "@/components/auth/ProtectedAction";
 import { getIssuedInvoices, createIssuedInvoice, updateInvoiceStatus } from "@/lib/data/invoices";
 import InvoiceForm from "@/components/invoices/InvoiceForm";
 import InvoiceList from "@/components/invoices/InvoiceList";
-import InvoiceEmptyState from "@/components/invoices/InvoiceEmptyState";
+import EmptyState from "@/components/state/EmptyState";
 import LoadingState from "@/components/state/LoadingState";
 import ErrorState from "@/components/state/ErrorState";
+import SuccessToast from "@/components/ui/SuccessToast";
+import { TrendingUp } from "lucide-react";
 
 function InvoiceStatCard({ label, value, icon: Icon, delay }) {
   return (
@@ -42,6 +44,8 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({ status: '' });
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successInfo, setSuccessInfo] = useState({ title: "", message: "" });
   
   const router = useRouter();
 
@@ -87,6 +91,8 @@ export default function InvoicesPage() {
     try {
       await createIssuedInvoice(formData);
       setIsModalOpen(false);
+      setSuccessInfo({ title: "Factura Emitida", message: "El comprobante fiscal ha sido generado y registrado." });
+      setShowSuccess(true);
       fetchInvoices();
     } catch (err) {
       throw err;
@@ -96,6 +102,8 @@ export default function InvoicesPage() {
   const handleUpdateStatus = async (id, status) => {
     try {
       await updateInvoiceStatus(id, status);
+      setSuccessInfo({ title: "Estado Actualizado", message: `La factura ha sido marcada como ${status}.` });
+      setShowSuccess(true);
       fetchInvoices();
     } catch (err) {
       alert("Error al actualizar: " + err.message);
@@ -161,12 +169,14 @@ export default function InvoicesPage() {
               <LoadingState message="Cargando historial de facturación..." />
             ) : error ? (
               <ErrorState message={error} onRetry={fetchInvoices} />
-            ) : filteredInvoices.length === 0 ? (
-              <InvoiceEmptyState 
-                 type={searchQuery ? "search" : "empty"} 
-                 onAction={searchQuery ? null : () => setIsModalOpen(true)}
-                 actionLabel="Crear Primera Factura"
-              />
+           ) : filteredInvoices.length === 0 ? (
+             <EmptyState 
+               title={searchQuery ? "Sin coincidencias" : "Facturación Vacía"} 
+               message={searchQuery ? "No encontramos facturas con ese NCF o cliente." : "Comienza a emitir comprobantes fiscales electrónicos (e-CF) de manera profesional y rápida."}
+               onAction={() => setIsModalOpen(true)}
+               actionLabel="Nueva Factura Legal"
+               icon={FilePlus2}
+             />
             ) : (
               <InvoiceList 
                  invoices={filteredInvoices} 
@@ -186,6 +196,13 @@ export default function InvoicesPage() {
           onCancel={() => setIsModalOpen(false)}
         />
       </Modal>
+
+      <SuccessToast 
+        show={showSuccess} 
+        title={successInfo.title}
+        message={successInfo.message}
+        onClose={() => setShowSuccess(false)}
+      />
     </div>
   );
 }

@@ -1,49 +1,54 @@
-/**
- * NCF (Número de Comprobante Fiscal) Validation Utility
- */
+import { normalizeNCF } from "./normalize";
 
 export const NCF_TYPES = {
   "01": "Crédito Fiscal",
   "02": "Consumo",
   "11": "Compras",
+  "12": "Registro Único de Ingresos",
   "14": "Regímenes Especiales",
   "15": "Gubernamental"
 };
 
 /**
- * Validates if a string follows the standard B-series NCF format.
- * Pattern: B + 10 digits
- * Total length: 11 characters
+ * Validates if a string follows the standard B-series or E-series NCF format.
+ * - B Series: B + 10 digits (11 total)
+ * - E Series: E + 10 digits (11 total)
  */
 export const validateNCF = (ncf) => {
-  if (!ncf) return { isValid: false, error: "El NCF no puede estar vacío" };
+  const cleanNcf = normalizeNCF(ncf);
+
+  if (!cleanNcf) {
+    return { isValid: false, error: "El NCF es obligatorio" };
+  }
   
-  // Basic length and prefix check
-  const bSeriesRegex = /^B[0-9]{10}$/;
-  if (!bSeriesRegex.test(ncf)) {
+  // B or E series
+  const validRegex = /^[BE][0-9]{10}$/;
+  if (!validRegex.test(cleanNcf)) {
     return { 
       isValid: false, 
-      error: "Formato de NCF inválido (debe iniciar con B y tener 11 caracteres)" 
+      error: "Formato inválido (Ej: B0100000001)" 
     };
   }
 
   // Check if the type (digits 2-3) is recognized
-  const typeCode = ncf.substring(1, 3);
+  const typeCode = cleanNcf.substring(1, 3);
   if (!NCF_TYPES[typeCode]) {
     return {
       isValid: false,
-      error: `Tipo de comprobante '${typeCode}' no reconocido`
+      error: `Tipo NCF '${typeCode}' no reconocido`
     };
   }
 
-  return { isValid: true, type: NCF_TYPES[typeCode] };
+  return { 
+    isValid: true, 
+    type: NCF_TYPES[typeCode],
+    isElectronic: cleanNcf.startsWith('E')
+  };
 };
 
-/**
- * Returns the human-readable type of an NCF.
- */
 export const getNCFTypeLabel = (ncf) => {
-  if (!ncf || ncf.length < 3) return "Desconocido";
-  const typeCode = ncf.substring(1, 3);
-  return NCF_TYPES[typeCode] || "Otro comprobante";
+  const clean = normalizeNCF(ncf);
+  if (!clean || clean.length < 3) return "General";
+  const typeCode = clean.substring(1, 3);
+  return NCF_TYPES[typeCode] || "Otro";
 };

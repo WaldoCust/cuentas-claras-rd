@@ -27,12 +27,12 @@ export const generate607Text = (userRnc, period, sales) => {
     const ncf = s.ncf || s.ncf_number || "";
     const tipoIngreso = s.revenue_type || "01";
     const fecha = s.date_emission?.replace(/-/g, "") || "";
-    const monto = parseFloat(s.amount_gross || 0).toFixed(2);
-    const itbis = parseFloat(s.amount_itbis || 0).toFixed(2);
+    const subtotal = parseFloat(s.amount_gross || s.subtotal || 0).toFixed(2);
+    const itbis = parseFloat(s.amount_itbis || s.itbis || 0).toFixed(2);
     
     // Simplified 607 pipe delimited format
     // Fields: RNC/Cédula, Tipo Id, NCF, NCF Modificado, Tipo Ingreso, Fecha Emisión, Fecha Retención, Monto Facturado, ITBIS Facturado, ITBIS Retenido, ITBIS por Terceros, ITBIS Percibido, Retención Renta, ISR Percibido, Impuesto Selectivo, Otros Impuestos, Propina Legal, Efectivo, Cheque/Transferencia, Tarjeta, Crédito, Permuta, Otras Formas
-    return `${clientRnc}|${tipoId}|${ncf}||${tipoIngreso}|${fecha}||${monto}|${itbis}|0.00|0.00|0.00|0.00|0.00|0.00|0.00|0.00|${monto}|0.00|0.00|0.00|0.00|0.00`;
+    return `${clientRnc}|${tipoId}|${ncf}||${tipoIngreso}|${fecha}||${subtotal}|${itbis}|0.00|0.00|0.00|0.00|0.00|0.00|0.00|0.00|${subtotal}|0.00|0.00|0.00|0.00|0.00`;
   });
 
   if (errors.length > 0) {

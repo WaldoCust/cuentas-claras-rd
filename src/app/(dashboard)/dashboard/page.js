@@ -11,6 +11,7 @@ import TaxSummaryCard from "@/components/dashboard/TaxSummaryCard";
 import { RevenueSummaryCard, ExpenseSummaryCard } from "@/components/dashboard/RevenueSummaryCard";
 import LoadingState from "@/components/state/LoadingState";
 import EmptyState from "@/components/state/EmptyState";
+import ActionPrompt from "@/components/state/ActionPrompt";
 import TrustBadge from "@/components/ui/TrustBadge";
 
 import { useRouter } from "next/navigation";
@@ -63,6 +64,24 @@ export default function Dashboard() {
           </div>
         </motion.div>
       </header>
+
+      {/* Quick Actions for First Use */}
+      {!summary?.ncf_count && (
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+           <ActionPrompt 
+             title="Registra tu primer Cliente"
+             message="Sincroniza tus datos comerciales para empezar a facturar con NCF."
+             actionLabel="Ir a Clientes"
+             onAction={() => router.push('/dashboard/clients')}
+           />
+           <ActionPrompt 
+             title="Sube tu primera Compra"
+             message="Usa nuestra IA para extraer datos de tus facturas y preparar el 606."
+             actionLabel="Ir a Compras"
+             onAction={() => router.push('/dashboard/purchases')}
+           />
+        </section>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Tax Engine Visualization */}
@@ -138,13 +157,13 @@ export default function Dashboard() {
                       <div>
                         <div className="flex items-center gap-2 mb-0.5">
                            <p className="text-sm font-black text-slate-900">{item.direction === 'issued' ? "Ingreso Facturado" : "Gasto Corporativo"}</p>
-                           <span className="text-[8px] font-black px-1.5 py-0.5 bg-slate-100 rounded text-slate-400 uppercase tracking-widest">{item.ncf?.slice(0,3)}</span>
+                           <span className="text-[8px] font-black px-1.5 py-0.5 bg-slate-100 rounded text-slate-400 uppercase tracking-widest">{(item.ncf_number || item.ncf || "").slice(0,3)}</span>
                         </div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">NCF: {item.ncf} • {new Date(item.date_emission || item.created_at).toLocaleDateString()}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">NCF: {item.ncf_number || item.ncf} • {new Date(item.date_emission || item.created_at).toLocaleDateString()}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-black text-slate-900 tracking-tight italic">RD$ {parseFloat(item.amount_gross + (item.amount_itbis || 0)).toLocaleString()}</p>
+                      <p className="text-lg font-black text-slate-900 tracking-tight italic">RD$ {parseFloat((item.subtotal || item.amount_gross || 0) + (item.itbis || item.amount_itbis || 0)).toLocaleString()}</p>
                       <p className={cn(
                         "text-[9px] font-black uppercase tracking-widest mt-1",
                         item.direction === 'issued' ? 'text-emerald-500' : 'text-slate-400'

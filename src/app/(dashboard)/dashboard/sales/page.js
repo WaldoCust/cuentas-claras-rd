@@ -16,10 +16,12 @@ import SaleForm from "@/components/sales/SaleForm";
 import SalesSummaryCards from "@/components/sales/SalesSummaryCards";
 import LoadingState from "@/components/state/LoadingState";
 import ErrorState from "@/components/state/ErrorState";
+import EmptyState from "@/components/state/EmptyState";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import SecurityNotice from "@/components/ui/SecurityNotice";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import SuccessToast from "@/components/ui/SuccessToast";
+import { TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function SalesPage() {
@@ -202,23 +204,13 @@ export default function SalesPage() {
            ) : error ? (
              <ErrorState message={error} onRetry={fetchData} />
            ) : sales.length === 0 ? (
-             <div className="glass-card rounded-[3rem] p-24 text-center space-y-8 bg-white/40 border-white/60 shadow-xl">
-                <div className="w-24 h-24 rounded-[2.5rem] bg-slate-900 flex items-center justify-center mx-auto shadow-2xl">
-                   <FilePlus2 className="w-10 h-10 text-white" />
-                </div>
-                <div className="space-y-3">
-                   <h3 className="text-2xl font-black text-slate-900 italic tracking-tight">Sin Ventas Registradas</h3>
-                   <p className="text-xs text-slate-400 font-bold uppercase tracking-widest max-w-sm mx-auto leading-relaxed">
-                     Tu historial de ingresos está listo. Registra tu primera operación o sincroniza tus facturas.
-                   </p>
-                </div>
-                <button 
-                   onClick={() => setIsModalOpen(true)}
-                   className="px-10 py-5 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-primary/30 hover:scale-[1.05] transition-all"
-                >
-                   Nueva Venta Directa
-                </button>
-             </div>
+             <EmptyState 
+               title="Sin reportes 607" 
+               message="Registra tus ventas e ingresos para generar automáticamente el reporte 607. También puedes ver aquí las facturas legales que emitas."
+               onAction={() => setIsModalOpen(true)}
+               actionLabel="Cargar Primera Venta"
+               icon={TrendingUp}
+             />
            ) : (
              <SalesList 
                sales={sales} 

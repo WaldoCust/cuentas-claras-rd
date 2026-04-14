@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserPlus, Search, ShieldCheck, Zap } from "lucide-react";
+import { Search, ShieldCheck, Zap } from "lucide-react";
 import Modal from "@/components/Modal";
 import { cn } from "@/lib/utils";
 import { getClients, createClient, updateClient, archiveClient, syncClientsFromInvoices } from "@/lib/data/clients";
@@ -11,9 +11,11 @@ import { getClients, createClient, updateClient, archiveClient, syncClientsFromI
 import ClientForm from "@/components/clients/ClientForm";
 import ClientList from "@/components/clients/ClientList";
 import ClientFilters from "@/components/clients/ClientFilters";
-import ClientEmptyState from "@/components/clients/ClientEmptyState";
+import EmptyState from "@/components/state/EmptyState";
 import LoadingState from "@/components/state/LoadingState";
 import ErrorState from "@/components/state/ErrorState";
+import SuccessToast from "@/components/ui/SuccessToast";
+import { UserPlus } from "lucide-react";
 
 export default function ClientsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,6 +25,8 @@ export default function ClientsPage() {
   const [clients, setClients] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successInfo, setSuccessInfo] = useState({ title: "", message: "" });
   
   const [filters, setFilters] = useState({
     status: 'active',
@@ -69,10 +73,13 @@ export default function ClientsPage() {
     try {
       if (editingClient) {
         await updateClient(editingClient.id, formData);
+        setSuccessInfo({ title: "Perfil Actualizado", message: "Los datos del cliente se han sincronizado correctamente." });
       } else {
         await createClient(formData);
+        setSuccessInfo({ title: "Cliente Registrado", message: "El nuevo cliente ha sido añadido a tu cartera." });
       }
       setIsModalOpen(false);
+      setShowSuccess(true);
       fetchClients();
     } catch (err) {
       throw err; // Form component will handle showing the error
@@ -184,6 +191,13 @@ export default function ClientsPage() {
           onCancel={() => setIsModalOpen(false)}
         />
       </Modal>
+
+      <SuccessToast 
+        show={showSuccess} 
+        title={successInfo.title}
+        message={successInfo.message}
+        onClose={() => setShowSuccess(false)}
+      />
     </div>
   );
 }

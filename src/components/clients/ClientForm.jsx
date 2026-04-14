@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { User, Phone, Mail, MapPin, Hash, Building2, AlertCircle, Save, Loader2 } from "lucide-react";
-import { validateIdentity, normalizeIdentity } from "@/lib/validation/clients";
+import { validateForm } from "@/lib/validation/core";
+import { normalizeRNC } from "@/lib/validation/normalize";
+import FieldError from "@/components/forms/FieldError";
 import { cn } from "@/lib/utils";
 
 export default function ClientForm({ client, onSubmit, onCancel }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [validationError, setValidationError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
     business_name: client?.business_name || "",
@@ -25,9 +27,13 @@ export default function ClientForm({ client, onSubmit, onCancel }) {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear validation error when typing identity
-    if (name === "rnc_or_cedula") {
-      setValidationError(null);
+    // Clear field error when typing
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
     }
   };
 
@@ -36,10 +42,10 @@ export default function ClientForm({ client, onSubmit, onCancel }) {
     setLoading(true);
     setError(null);
 
-    // Validate Identity
-    const { isValid, error: vError } = validateIdentity(formData.rnc_or_cedula);
+    // Validate Form
+    const { isValid, errors } = validateForm(formData, ['business_name', 'rnc_or_cedula']);
     if (!isValid) {
-      setValidationError(vError);
+      setFieldErrors(errors);
       setLoading(false);
       return;
     }
@@ -47,7 +53,7 @@ export default function ClientForm({ client, onSubmit, onCancel }) {
     try {
       await onSubmit({
         ...formData,
-        rnc_or_cedula: normalizeIdentity(formData.rnc_or_cedula)
+        rnc_or_cedula: normalizeRNC(formData.rnc_or_cedula)
       });
     } catch (err) {
       setError(err.message);
@@ -60,7 +66,7 @@ export default function ClientForm({ client, onSubmit, onCancel }) {
     <form onSubmit={handleSubmit} className="space-y-8 py-4">
       {error && (
         <div className="p-4 rounded-2xl bg-red-50 border border-red-100 flex items-center gap-3 text-red-600 text-xs font-black uppercase tracking-widest">
-           <AlertCircle className="w-5 h-5" />
+           <AlertCircle className="w-5 h-5 flex-shrink-0" />
            {error}
         </div>
       )}
@@ -73,13 +79,16 @@ export default function ClientForm({ client, onSubmit, onCancel }) {
               <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
               <input 
                 name="business_name"
-                required
                 value={formData.business_name}
                 onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                className={cn(
+                  "w-full bg-slate-50 border rounded-2xl py-4 pl-12 pr-6 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 transition-all",
+                  fieldErrors.business_name ? "border-red-300 focus:ring-red-100" : "border-slate-100 focus:ring-primary/20"
+                )}
                 placeholder="Nombre legal del negocio"
               />
             </div>
+            <FieldError error={fieldErrors.business_name} />
           </div>
 
           <div className="space-y-2">
@@ -88,17 +97,16 @@ export default function ClientForm({ client, onSubmit, onCancel }) {
               <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
               <input 
                 name="rnc_or_cedula"
-                required
                 value={formData.rnc_or_cedula}
                 onChange={handleChange}
                 className={cn(
                   "w-full bg-slate-50 border rounded-2xl py-4 pl-12 pr-6 text-sm font-mono font-black text-slate-900 focus:outline-none focus:ring-2 transition-all",
-                  validationError ? "border-red-300 focus:ring-red-100" : "border-slate-100 focus:ring-primary/20"
+                  fieldErrors.rnc_or_cedula ? "border-red-300 focus:ring-red-100" : "border-slate-100 focus:ring-primary/20"
                 )}
                 placeholder="000-00000-0"
               />
             </div>
-            {validationError && <p className="text-[10px] font-black text-red-500 uppercase tracking-widest ml-1 mt-1">{validationError}</p>}
+            <FieldError error={fieldErrors.rnc_or_cedula} />
           </div>
         </div>
 
@@ -181,6 +189,18 @@ export default function ClientForm({ client, onSubmit, onCancel }) {
               placeholder="Calle, Número, Ciudad..."
             />
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Notas Internas</label>
+          <textarea 
+            name="notes"
+            value={formData.notes}
+            onChange={handleChange}
+            rows={2}
+            className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+            placeholder="Observaciones sobre el cliente..."
+          />
         </div>
       </div>
 

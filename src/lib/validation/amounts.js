@@ -1,39 +1,38 @@
-/**
- * Fiscal Amounts Math Validation Utility
- */
+import { normalizeAmount } from "./normalize";
 
 /**
- * Ensures that the sum of gross and itbis matches the total.
- * Allows for a small epsilon for floating point/rounding differences (0.01).
+ * Ensures that the sum of subtotal and itbis matches the total.
+ * Allows for a small epsilon for safe rounding differences (0.02).
  */
-export const validateFiscalMath = (gross, itbis, total) => {
-  const g = parseFloat(gross) || 0;
-  const i = parseFloat(itbis) || 0;
-  const t = parseFloat(total) || 0;
+export const validateFiscalMath = (subtotal, itbis, total) => {
+  const s = normalizeAmount(subtotal);
+  const i = normalizeAmount(itbis);
+  const t = normalizeAmount(total);
 
-  const expectedTotal = g + i;
+  const expectedTotal = normalizeAmount(s + i);
   const diff = Math.abs(expectedTotal - t);
 
-  if (diff > 0.02) { // 2 cents threshold for safe rounding
+  if (diff > 0.02) {
     return {
       isValid: false,
-      error: `La suma no coincide: Bruto (${g.toFixed(2)}) + ITBIS (${i.toFixed(2)}) ≠ Total (${t.toFixed(2)})`
+      error: `Montos inconsistentes: ${s.toFixed(2)} + ${i.toFixed(2)} ≠ ${t.toFixed(2)}`
     };
   }
 
-  return { isValid: true };
+  return { 
+    isValid: true,
+    values: { subtotal: s, itbis: i, total: t }
+  };
 };
 
 /**
- * Checks for negative or invalid numeric values.
+ * Validates that all provided values are non-negative.
  */
-export const validatePositiveAmounts = (amounts) => {
-  for (const [key, val] of Object.entries(amounts)) {
-    if (val < 0) {
-      return { isValid: false, error: `El campo '${key}' no puede ser negativo` };
-    }
-    if (isNaN(val)) {
-      return { isValid: false, error: `El campo '${key}' debe ser un número válido` };
+export const validateNonNegative = (values = {}) => {
+  for (const [key, val] of Object.entries(values)) {
+    const num = normalizeAmount(val);
+    if (num < 0) {
+      return { isValid: false, error: `El monto no puede ser negativo` };
     }
   }
   return { isValid: true };

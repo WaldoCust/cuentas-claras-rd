@@ -15,11 +15,14 @@ import PurchaseForm from "@/components/purchases/PurchaseForm";
 import PurchaseImportReview from "@/components/purchases/PurchaseImportReview";
 import LoadingState from "@/components/state/LoadingState";
 import ErrorState from "@/components/state/ErrorState";
+import EmptyState from "@/components/state/EmptyState";
+import ActionPrompt from "@/components/state/ActionPrompt";
 import { useOnboarding } from "@/lib/onboarding/state";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import SecurityNotice from "@/components/ui/SecurityNotice";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import SuccessToast from "@/components/ui/SuccessToast";
+import { ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function PurchasesPage() {
@@ -268,6 +271,22 @@ export default function PurchasesPage() {
              <LoadingState message="Sincronizando registros de gastos..." />
            ) : error ? (
              <ErrorState message={error} onRetry={fetchData} />
+           ) : purchases.length === 0 ? (
+             <div className="space-y-8">
+               <EmptyState 
+                 title="Sin reportes 606" 
+                 message="Todavía no has registrado compras. Puedes subir una foto de tu factura o ingresarla manualmente para empezar a deducir ITBIS."
+                 onAction={() => { setActiveTab("manual"); setIsModalOpen(true); }}
+                 actionLabel="Nuevo Gasto Manual"
+                 icon={ShoppingBag}
+               />
+               <ActionPrompt 
+                 title="Captura Rápida"
+                 message="¿Tienes una factura a mano? Súbela y nuestra IA extraerá el RNC y los montos por ti."
+                 actionLabel="Escanear Factura"
+                 onAction={() => document.querySelector('input[type="file"]')?.click()}
+               />
+             </div>
            ) : (
              <PurchaseList 
                purchases={purchases} 

@@ -1,5 +1,5 @@
 import { createClient as getSupabase } from '@/lib/supabase/client';
-import { normalizeIdentity } from '@/lib/validation/clients';
+
 
 export const getClients = async (filters = {}) => {
   const supabase = getSupabase();
@@ -31,27 +31,49 @@ export const getClients = async (filters = {}) => {
   return data;
 };
 
+import { validateForm } from "@/lib/validation/core";
+import { normalizePayload } from "@/lib/validation/normalize";
+
 export const createClient = async (clientData) => {
   const supabase = getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Authentication required");
 
-  const normalizedRnc = normalizeIdentity(clientData.rnc_or_cedula);
+  // Re-validate for data integrity
+  const { isValid, errors } = validateForm(clientData, ['business_name', 'rnc_or_cedula']);
+  if (!isValid) {
+    throw new Error(`Datos inválidos: ${Object.values(errors).join(", ")}`);
+  }
+
+  // Normalize and validate payload
+  const normalized = normalizePayload(clientData, {
+    business_name: 'string',
+    rnc_or_cedula: 'rnc',
+    document_type: 'string',
+    fiscal_type: 'string',
+    phone: 'string',
+    email: 'string',
+    address: 'string',
+    notes: 'string',
+    behavior: 'string'
+  });
+
+  const payload = {
+    ...normalized,
+    status: 'active',
+    user_id: user.id
+  };
 
   const { data, error } = await supabase
     .from('clients')
-    .insert({
-      ...clientData,
-      user_id: user.id,
-      rnc_or_cedula: normalizedRnc,
-      status: 'active'
-    })
+    .insert(payload)
     .select()
     .single();
 
   if (error) {
+    console.error("Supabase Error (Client Creation):", error);
     if (error.code === '23505') throw new Error("Ya existe un cliente con este RNC/Cédula");
-    throw error;
+    throw new Error("No pudimos guardar el cliente. Por favor verifica los datos.");
   }
   return data;
 };

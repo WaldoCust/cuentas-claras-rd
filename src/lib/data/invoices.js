@@ -45,24 +45,63 @@ export const getIssuedInvoices = async (filters = {}) => {
  * @param {object} invoiceData 
  * @returns {Promise<object>}
  */
+import { validateForm } from "@/lib/validation/core";
+import { normalizePayload } from "@/lib/validation/normalize";
+
 export const createIssuedInvoice = async (invoiceData) => {
   const supabase = getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Auth required");
+  if (!user) throw new Error("Authentication required");
+
+  // Re-validate consistency
+  const { isValid, errors } = validateForm(invoiceData, ['client_id', 'date_emission', 'subtotal']);
+  if (!isValid) {
+    throw new Error(`Datos inválidos: ${Object.values(errors).join(", ")}`);
+  }
+
+  // Normalize and validate payload
+  const normalized = normalizePayload(invoiceData, {
+    client_id: 'string',
+    direction: 'string',
+    type: 'string',
+    date_emission: 'string',
+    subtotal: 'number',
+    itbis: 'number',
+    total: 'number',
+    ncf_number: 'ncf',
+    status: 'string',
+    notes: 'string',
+    currency: 'string',
+    payment_status: 'string'
+  });
+
+  const payload = {
+    user_id: user.id,
+    client_id: normalized.client_id,
+    direction: 'issued',
+    type: normalized.type || '607',
+    date_emission: normalized.date_emission,
+    subtotal: normalized.subtotal,
+    itbis: normalized.itbis,
+    total: normalized.total || (normalized.subtotal + normalized.itbis),
+    ncf_number: normalized.ncf_number || null,
+    status: normalized.status || 'draft',
+    notes: normalized.notes || null,
+    currency: normalized.currency || 'DOP',
+    payment_status: normalized.payment_status || 'pending',
+    reporting_status: 'pending'
+  };
 
   const { data, error } = await supabase
     .from('invoices')
-    .insert({
-      ...invoiceData,
-      user_id: user.id,
-      direction: 'issued',
-      status: invoiceData.status || 'draft',
-      dgii_sync_status: 'pending'
-    })
+    .insert(payload)
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Supabase Error (Invoice Creation):", error);
+    throw new Error("No pudimos generar la factura. Revisa el cliente y los montos.");
+  }
   return data;
 };
 

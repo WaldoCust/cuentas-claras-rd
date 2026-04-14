@@ -1,6 +1,4 @@
-/**
- * RNC / Cédula Validation Utility
- */
+import { normalizeRNC } from "./normalize";
 
 /**
  * Validates a Dominican RNC or Cédula.
@@ -8,34 +6,39 @@
  * - Cédula: 11 numeric digits
  */
 export const validateRNC = (rnc) => {
-  if (!rnc) return { isValid: false, error: "El RNC/Cédula es requerido" };
-
-  // Remove any non-numeric characters (hyphens, spaces)
-  const cleanRnc = rnc.replace(/\D/g, "");
-
-  if (cleanRnc.length === 0) {
-    return { isValid: false, error: "El número debe contener solo dígitos" };
+  const cleanRnc = normalizeRNC(rnc);
+  
+  if (!cleanRnc) {
+    return { isValid: false, error: "El RNC o Cédula es obligatorio" };
   }
 
   if (cleanRnc.length !== 9 && cleanRnc.length !== 11) {
     return { 
       isValid: false, 
-      error: "El RNC debe tener 9 dígitos y la Cédula 11 dígitos" 
+      error: "RNC inválido (debe tener 9 u 11 dígitos)" 
     };
   }
 
+  // Basic checksum or pattern could be added here, but length + numeric is 
+  // the primary requirement for beta.
+  
   return { 
     isValid: true, 
-    type: cleanRnc.length === 9 ? "RNC (Jurídica)" : "Cédula (Física)",
+    type: cleanRnc.length === 9 ? "RNC" : "Cédula",
     cleanValue: cleanRnc
   };
 };
 
 /**
- * Formats an RNC into the standard hyphenated display (e.g., 001-00000-0).
- * Since standard RNC/Cédula hyphen placement varies, we provide a clean numeric format 
- * if we don't know the exact type context.
+ * Display helper for RNC/Cédula hyphenation
  */
-export const formatRNC = (rnc) => {
-  return rnc.replace(/\D/g, "");
+export const displayRNC = (rnc) => {
+  const clean = normalizeRNC(rnc);
+  if (clean.length === 9) {
+    return `${clean.slice(0, 1)}-${clean.slice(1, 3)}-${clean.slice(3, 8)}-${clean.slice(8)}`;
+  }
+  if (clean.length === 11) {
+     return `${clean.slice(0, 3)}-${clean.slice(3, 10)}-${clean.slice(10)}`;
+  }
+  return clean;
 };
