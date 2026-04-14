@@ -48,7 +48,7 @@ export default function Benefits() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-5xl md:text-6xl font-black tracking-tight mb-8 leading-tight"
+              className="text-5xl md:text-6xl font-black tracking-tight mb-8 leading-tight text-white"
             >
               Todo lo que necesitas <br />
               <span className="text-primary italic">en un solo lugar.</span>

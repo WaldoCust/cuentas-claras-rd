@@ -16,7 +16,7 @@ export default function Navbar() {
             CuentasClaras<span className="text-primary not-italic">RD</span>
           </span>
         </Link>
-        <div className="hidden md:flex items-center gap-10 text-[10px] font-black uppercase tracking-widest text-slate-400">
+        <div className="hidden md:flex items-center gap-10 text-[10px] font-black uppercase tracking-widest text-slate-600">
           <a href="#how-it-works" className="hover:text-primary transition-colors">Cómo funciona</a>
           <a href="#pricing" className="hover:text-primary transition-colors">Precios</a>
         </div>
