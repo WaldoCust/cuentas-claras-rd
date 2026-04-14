@@ -35,10 +35,10 @@ export default function PricingPreview() {
             <div className="glass-card bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl shadow-slate-900/30 flex flex-col scale-105 border-primary/20 relative">
               <div className="absolute top-6 right-8 px-3 py-1 bg-primary rounded-full text-[8px] font-black uppercase tracking-widest">Popular</div>
               <div className="space-y-4 mb-8">
-                 <p className="text-[10px] uppercase font-black tracking-[0.3em] opacity-60">Pro</p>
+                 <p className="text-[10px] uppercase font-black tracking-[0.3em]" style={{ color: 'rgba(255,255,255,0.7)' }}>Pro</p>
                  <div className="flex flex-col">
-                    <h3 className="text-4xl font-black italic">RD$ 750</h3>
-                    <p className="text-[10px] opacity-40 font-bold uppercase tracking-widest mt-1">Por Mes</p>
+                    <h3 className="text-4xl font-black italic" style={{ color: 'white' }}>RD$ 750</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>Por Mes</p>
                  </div>
               </div>
               <ul className="space-y-4 mb-10 flex-1">
