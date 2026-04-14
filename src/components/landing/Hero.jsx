@@ -77,9 +77,9 @@ export default function Hero() {
                  </div>
               </div>
               <img 
-                src="/cuentas_claras_dashboard_mockup.png" 
-                alt="606 Automation Preview"
-                className="w-full h-full object-cover opacity-80"
+                src="/dashboard-live-preview.png" 
+                alt="Dashbord Live Preview"
+                className="w-full h-full object-cover opacity-100"
               />
             </div>
           </div>
